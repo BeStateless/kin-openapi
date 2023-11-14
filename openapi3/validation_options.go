@@ -13,6 +13,7 @@ type ValidationOptions struct {
 	schemaFormatValidationEnabled                    bool
 	schemaPatternValidationDisabled                  bool
 	extraSiblingFieldsAllowed                        map[string]struct{}
+	maxErrors                                        int
 }
 
 type validationOptionsKey struct{}
@@ -89,6 +90,12 @@ func EnableExamplesValidation() ValidationOption {
 func DisableExamplesValidation() ValidationOption {
 	return func(options *ValidationOptions) {
 		options.examplesValidationDisabled = true
+	}
+}
+
+func WithMaxErrors(max int) ValidationOption {
+	return func(options *ValidationOptions) {
+		options.maxErrors = max
 	}
 }
 

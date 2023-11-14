@@ -157,3 +157,78 @@ func (doc *T) Validate(ctx context.Context, opts ...ValidationOption) error {
 
 	return validateExtensions(ctx, doc.Extensions)
 }
+
+// ValidateAll returns an error if T does not comply with the OpenAPI spec.
+// Validations Options can be provided to modify the validation behavior.
+func (doc *T) ValidateAll(ctx context.Context, opts ...ValidationOption) []error {
+	ctx = WithValidationOptions(ctx, opts...)
+	verrs := make([]error, 0)
+
+	if doc.OpenAPI == "" {
+		verrs = append(verrs, errors.New("value of openapi must be a non-empty string"))
+	}
+
+	var wrap func(error) error
+
+	wrap = func(e error) error { return fmt.Errorf("invalid components: %w", e) }
+	if v := doc.Components; v != nil {
+		if err := v.Validate(ctx); err != nil {
+			verrs = append(verrs, wrap(err))
+		}
+	}
+
+	wrap = func(e error) error { return fmt.Errorf("invalid info: %w", e) }
+	if v := doc.Info; v != nil {
+		if err := v.Validate(ctx); err != nil {
+			verrs = append(verrs, wrap(err))
+		}
+	} else {
+		verrs = append(verrs, wrap(errors.New("must be an object")))
+	}
+
+	wrap = func(e error) error { return fmt.Errorf("invalid paths: %w", e) }
+	if v := doc.Paths; v != nil {
+		if err := v.Validate(ctx); err != nil {
+			verrs = append(verrs, wrap(err))
+		}
+	} else {
+		verrs = append(verrs, wrap(errors.New("must be an object")))
+	}
+
+	wrap = func(e error) error { return fmt.Errorf("invalid security: %w", e) }
+	if v := doc.Security; v != nil {
+		if err := v.Validate(ctx); err != nil {
+			verrs = append(verrs, wrap(err))
+		}
+	}
+
+	wrap = func(e error) error { return fmt.Errorf("invalid servers: %w", e) }
+	if v := doc.Servers; v != nil {
+		if err := v.Validate(ctx); err != nil {
+			verrs = append(verrs, wrap(err))
+		}
+	}
+
+	wrap = func(e error) error { return fmt.Errorf("invalid tags: %w", e) }
+	if v := doc.Tags; v != nil {
+		if err := v.Validate(ctx); err != nil {
+			verrs = append(verrs, wrap(err))
+		}
+	}
+
+	wrap = func(e error) error { return fmt.Errorf("invalid external docs: %w", e) }
+	if v := doc.ExternalDocs; v != nil {
+		if err := v.Validate(ctx); err != nil {
+			verrs = append(verrs, wrap(err))
+		}
+	}
+
+	wrap = func(e error) error { return fmt.Errorf("invalid extension: %w", e) }
+	if v := doc.Extensions; v != nil {
+		if err := validateExtensions(ctx, v); err != nil {
+			verrs = append(verrs, wrap(err))
+		}
+	}
+
+	return verrs
+}
